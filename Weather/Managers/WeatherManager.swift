@@ -9,18 +9,26 @@ import Foundation
 import CoreLocation
 
 class WeatherManager {
+    private var apiKey: String {
+        guard let filePath = Bundle.main.path(forResource: "Config", ofType: "plist"),
+              let plist = NSDictionary(contentsOfFile: filePath),
+              let value = plist.object(forKey: "API_KEY") as? String else {
+            fatalError("Couldn't find key 'API_KEY' in 'Config.plist'.")
+        }
+        return value
+    }
+
     func getCurrentWeather(latitude: CLLocationDegrees, longitude: CLLocationDegrees) async throws -> ResponseBody {
-        let api="9f5d71a86c6e40af45d2338948334444"
-        guard let url = URL(string: "https://api.openweathermap.org/data/2.5/weather?lat=\(latitude)&lon=\(longitude)&appid=\(api)&units=metric") else {fatalError("Invalid URL")}
-        
+        guard let url = URL(string: "https://api.openweathermap.org/data/2.5/weather?lat=\(latitude)&lon=\(longitude)&appid=\(apiKey)&units=metric") else { fatalError("Invalid URL") }
+
         let urlRequest = URLRequest(url: url)
-        
+
         let (data, response) = try await URLSession.shared.data(for: urlRequest)
-        
-        guard (response as? HTTPURLResponse)?.statusCode == 200 else {fatalError("Error fetching data")}
-        
+
+        guard (response as? HTTPURLResponse)?.statusCode == 200 else { fatalError("Error fetching data") }
+
         let decodedData = try JSONDecoder().decode(ResponseBody.self, from: data)
-        
+
         return decodedData
     }
 }
@@ -52,7 +60,7 @@ struct ResponseBody: Decodable {
         var pressure: Double
         var humidity: Double
     }
-    
+
     struct WindResponse: Decodable {
         var speed: Double
         var deg: Double
